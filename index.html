@@ -6,9 +6,10 @@
   <meta name="theme-color" content="#141513">
   <meta name="description" content="Train doubles en checkouts met The Darts Family. Speel drie trainingen op je eigen niveau en volg je vooruitgang.">
   <title>TDF Doubles Lab · The Darts Family</title>
-  <link rel="stylesheet" href="./styles.css?v=score-invoer">
-  <script defer src="./training.js?v=score-invoer"></script>
-  <script defer src="./app.js?v=score-invoer"></script>
+  <link rel="stylesheet" href="./styles.css?v=spelerskaart">
+  <script defer src="./training.js?v=spelerskaart"></script>
+  <script type="module" src="./account.js"></script>
+  <script defer src="./app.js?v=spelerskaart"></script>
 </head>
 <body>
   <a class="skip-link" href="#main">Naar inhoud</a>
@@ -18,15 +19,46 @@
         <span class="brand-mark" aria-hidden="true"><i></i></span>
         <span><strong>DOUBLES LAB</strong><small>THE DARTS FAMILY</small></span>
       </a>
-      <nav aria-label="Hoofdnavigatie">
+      <nav hidden aria-label="Hoofdnavigatie">
         <a href="#trainingen" data-nav="trainingen">Trainingen</a>
         <a href="#voortgang" data-nav="voortgang">Mijn voortgang</a>
+      <button id="show-card" class="button">Spelerskaart</button>
       </nav>
     </div>
   </header>
   <main class="site-width" id="main" tabindex="-1">
+    <section id="gate" class="account-panel" aria-labelledby="gate-title">
+      <h1 id="gate-title">Aanmelden bij Doubles Lab</h1>
+      <p id="gate-intro">Gebruik je TDF-account om je trainingen op elk toestel te hervatten.</p>
+      <form id="access" hidden>
+        <label>E-mailadres<input type="email" name="email" autocomplete="email" required></label>
+        <label>Wachtwoord<input type="password" name="password" autocomplete="current-password" required></label>
+        <button class="button primary" id="auth-submit">Aanmelden</button>
+        <button class="text-link" type="button" id="switch-auth">Nieuw account aanmaken</button>
+        <button class="text-link" type="button" id="reset-password">Wachtwoord vergeten?</button>
+      </form>
+      <div id="card-details" hidden><dl></dl>
+        <button type="button" class="button" id="edit-card">Spelerskaart bewerken</button>
+        <button type="button" class="button primary" id="back-app">Naar trainingen</button>
+      </div>
+      <form id="profile-form" hidden>
+        <label>Voornaam<input name="firstName" maxlength="100" autocomplete="given-name" required></label>
+        <label>Achternaam<input name="lastName" maxlength="100" autocomplete="family-name" required></label>
+        <label>Bijnaam<input name="nickname" maxlength="100" autocomplete="nickname"></label>
+        <label>Met welke darts speel je?<input name="darts" maxlength="200"></label>
+        <button class="button primary">Spelerskaart bewaren</button>
+      </form>
+      <div id="local-import" hidden>
+        <button class="button primary" id="import-yes">Mijn bestaande trainingen meenemen</button>
+        <button class="button" id="import-no">Overslaan</button>
+      </div>
+      <button type="button" id="auth-retry" class="button" hidden>Opnieuw laden</button>
+      <button type="button" id="logout" class="text-link" hidden>Afmelden</button>
+      <p id="auth-status" role="status">Account laden…</p>
+      <noscript>Schakel JavaScript in om je aan te melden.</noscript>
+    </section>
     <p id="data-notice" role="status" hidden></p>
-    <section id="home" aria-label="Trainingen">
+    <section hidden id="home" aria-label="Trainingen">
       <div class="hero">
         <canvas id="board" width="880" height="880" aria-hidden="true"></canvas>
         <div class="hero-copy">
@@ -52,7 +84,7 @@
     </section>
     <section id="history" class="inner-view" aria-labelledby="history-title" hidden>
       <a class="back-link" href="#trainingen">Naar trainingen</a>
-      <header class="section-heading"><div><h1 id="history-title">Mijn voortgang</h1><p>Je resultaten blijven in deze browser bewaard.</p></div></header>
+      <header class="section-heading"><div><h1 id="history-title">Mijn voortgang</h1><p>Je resultaten worden bij je TDF-account bewaard.</p></div></header>
       <div id="history-content"></div>
     </section>
     <section id="play" class="inner-view" aria-labelledby="play-title" hidden></section>

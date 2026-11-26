@@ -1,8 +1,6 @@
 "use strict";
 
 const { doubles, levels, modes, isMode, isLevel, isCheckout } = Training;
-const storageKey = "tdf-doubles-lab-v2";
-const legacyStorageKey = "tdf-doubles-lab-v1";
 const home = document.querySelector("#home");
 const play = document.querySelector("#play");
 const historyPage = document.querySelector("#history");
@@ -14,52 +12,57 @@ const dateFormat = new Intl.DateTimeFormat("nl-BE", {
 const gameKeys = ["bingo", "rescue", "sprint"];
 const percentFormat = new Intl.NumberFormat("nl-BE", { style: "percent", maximumFractionDigits: 1 });
 const decimalFormat = new Intl.NumberFormat("nl-BE", { maximumFractionDigits: 1 });
-let storageAvailable = true;
 let data = Training.readProgress(null);
 let historyFilter = "all";
 let levelFilter = "all";
 let multiplier = "S";
 
-function readData() {
-  try {
-    const saved = Training.readProgress(localStorage.getItem(storageKey) ?? localStorage.getItem(legacyStorageKey));
-    storageAvailable = true;
-    return saved;
-  } catch {
-    storageAvailable = false;
-    return null;
-  }
+let accountStore = null;
+let saving = false;
+function setAccount(store, progress) {
+  accountStore = store;
+  data = progress ?? Training.readProgress(null);
+  historyFilter = levelFilter = "all";
+  notice("");
+  route({ focus: false });
 }
-
-data = readData() ?? data;
-
+window.doublesLab = { setAccount };
 function notice(message) {
   dataNotice.hidden = !message;
   dataNotice.textContent = message;
 }
 
-function save(session) {
-  // Reconcile the latest browser data before replacing a session, including edits from another tab.
-  const latest = storageAvailable ? readData() : null;
-  if (latest && JSON.stringify(latest.sessions[session.mode]) !== JSON.stringify(data.sessions[session.mode])) {
-    data = latest;
-    route({ focus: false });
-    notice("Deze training is aangepast in een ander tabblad. Je ziet nu de bijgewerkte stand. Voer je laatste actie opnieuw in.");
-    return false;
-  }
-  data = Training.saveSession(latest ?? data, session, new Date().toISOString());
-  if (!latest) {
-    notice("Opslag is niet beschikbaar. Je wijzigingen blijven beschikbaar zolang dit tabblad open is.");
-    return true;
-  }
+async function save(session) {
+  const store = accountStore;
+  if (!store || saving) return false;
+  saving = true;
+  play.inert = true;
   try {
-    localStorage.setItem(storageKey, JSON.stringify(data));
+    const next = Training.saveSession(data, session, new Date().toISOString());
+    await store.save(session, data.sessions[session.mode], next.records.find(r => r.id === session.id));
+    if (accountStore !== store) return false;
+    data = next;
     notice("");
-  } catch {
-    storageAvailable = false;
-    notice("Opslaan is mislukt. Je wijzigingen blijven beschikbaar zolang dit tabblad open is.");
+    return true;
+  } catch (error) {
+    if (accountStore === store) {
+      notice("Opslaan is mislukt. Controleer je verbinding en probeer opnieuw.");
+      if (error.message === "conflict") {
+        try {
+          const latest = await store.load();
+          if (accountStore === store) {
+            data = latest;
+            route({focus:false});
+            notice("Deze training is op een ander toestel gewijzigd. De nieuwste stand is geladen.");
+          }
+        } catch { notice("De nieuwste stand laden is mislukt. Vernieuw de pagina."); }
+      }
+    }
+    return false;
+  } finally {
+    saving = false;
+    play.inert = false;
   }
-  return true;
 }
 
 function lastTest() {
@@ -150,9 +153,6 @@ function renderHistory() {
     (levelFilter === "all" || record.level === levelFilter)
   );
   const filteredModes = Object.keys(modes).filter((mode) => records.some((record) => record.mode === mode));
-  historyPage.querySelector(".section-heading p").textContent = storageAvailable
-    ? "Je resultaten blijven in deze browser bewaard."
-    : "Deze browser blokkeert opslag. Resultaten verdwijnen als je de pagina sluit of vernieuwt.";
   historyPage.querySelector("#history-content").innerHTML = `
     ${test ? `<section class="panel"><h2>Laatste instaptest</h2>
       <p><strong>${test.hits}/36 geraakt</strong> · Voorgesteld niveau ${levels[test.recommendation].label}</p>
@@ -353,7 +353,6 @@ function renderResult(record) {
   play.innerHTML = intro(record.mode, "Sessie afgerond") + `<section class="panel">
     <h2>Je resultaat</h2><p class="result-number">${scoreText(record)}</p>${detail}
     ${record.mode !== "test" ? scoreDetails([record], record.mode, "Resultaat van deze sessie") : ""}
-    ${storageAvailable ? "" : `<p class="hint">De browser blokkeert opslag. Dit resultaat blijft beschikbaar zolang je deze pagina openhoudt.</p>`}
     <div class="button-row">
       <a class="button primary" href="#trainingen">Naar trainingen</a>
       <a class="button" href="#voortgang">Bekijk mijn voortgang</a>
@@ -364,6 +363,7 @@ function renderResult(record) {
 }
 
 function route({ setup = false, focus = true } = {}) {
+  if (!accountStore) { home.hidden = play.hidden = historyPage.hidden = true; return; }
   const hash = location.hash.slice(1);
   const mode = routeMode();
   const view = hash === "voortgang" ? "history" : isMode(mode) ? "play" : "home";
@@ -399,7 +399,7 @@ function openMode(mode, setup = false) {
   route({ setup });
 }
 
-function begin(mode, level, restart = false) {
+async function begin(mode, level, restart = false) {
   const ongoing = sessionInProgress(mode);
   if (ongoing && !restart) {
     renderSession(data.sessions[mode]);
@@ -409,15 +409,15 @@ function begin(mode, level, restart = false) {
   if (ongoing && !window.confirm("Je hebt nog een onvoltooide sessie voor deze training. Deze vervangen?")) return;
   const id = globalThis.crypto?.randomUUID?.() ?? `${Date.now()}-${Math.random()}`;
   const session = Training.start(mode, level, id);
-  if (!save(session)) return;
+  if (!await save(session)) return;
   multiplier = "S";
   if (location.hash !== trainingLink(mode)) history.pushState(null, "", trainingLink(mode));
   renderSession(session);
   document.querySelector("#play-title").focus({ preventScroll: true });
 }
 
-function updateSession(next, control, message) {
-  if (next === data.sessions[next.mode] || !save(next)) return;
+async function updateSession(next, control, message) {
+  if (next === data.sessions[next.mode] || !await save(next)) return;
   if (!next.pending?.length && control.startsWith("[data-dart")) multiplier = "S";
   renderSession(next);
   const info = Training.inspect(next);
@@ -501,17 +501,6 @@ document.addEventListener("keydown", (event) => {
 window.addEventListener("hashchange", () => {
   if (location.hash !== "#main") route();
 });
-window.addEventListener("storage", (event) => {
-  if (event.key === storageKey || event.key === null) {
-    if (!storageAvailable) return;
-    const latest = readData();
-    if (latest) {
-      data = latest;
-      route({ focus: false });
-    }
-  }
-});
-
 function drawBoard() {
   const canvas = document.querySelector("#board");
   const ctx = canvas.getContext("2d");
