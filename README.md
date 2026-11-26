@@ -1,4 +1,4 @@
-# TDF Doubles Lab
+# TDF Trainings Lab
 
 Een zelfstandige webapp van The Darts Family. Gooi op je eigen bord en registreer je resultaat in de app.
 
