@@ -216,3 +216,18 @@ button.target-chip[aria-pressed="true"] { color: var(--button-ink); background: 
 .card-icon.wissel i::before { content: "⇄"; font-size: 1.45rem; font-weight: 800; }
 .card-icon.leg i { width: 19px; height: 19px; border: 1.5px solid; border-radius: 50%; }
 .card-icon.leg i::before { content: ""; position: absolute; inset: 5px; background: currentColor; border-radius: 50%; }
+
+#gate-intro:empty { display: none; }
+.account-panel.show-player-card { position: relative; padding-top: clamp(4.5rem, 10vw, 5.5rem); }
+.card-edit.button {
+  position: absolute;
+  top: 1rem;
+  left: 1rem;
+  width: 44px;
+  height: 44px;
+  padding: 0;
+  border-radius: 50%;
+  color: var(--gold-light);
+  font-size: 1.45rem;
+}
+.settings-actions { display: grid; gap: .75rem; justify-items: start; }

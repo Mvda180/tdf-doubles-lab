@@ -14,14 +14,16 @@ const el = id => document.getElementById(id);
 const trainingMenu = el("training-menu");
 const status = message => { el("auth-status").textContent = message; };
 let player, creating = false, generation = 0, progressStore, local;
+let settingsFromGate = false;
 function screen(form, title, intro) {
   window.doublesLab.setAccount(null);
   trainingMenu.hidden = true;
   el("gate").hidden = false;
-  for (const id of ["access", "profile-form", "local-import", "card-details", "cloud-import"]) el(id).hidden = id !== form;
+  for (const id of ["access", "profile-form", "local-import", "card-details", "cloud-import", "settings-panel"]) el(id).hidden = id !== form;
   el("gate-title").textContent = title;
   el("gate-intro").textContent = intro;
-  el("logout").hidden = !auth.currentUser;
+  el("gate").classList.toggle("show-player-card", form === "card-details");
+  el("gate-settings").hidden = !auth.currentUser || form === "settings-panel" || form === "cloud-import" || form === "card-details";
   el("auth-retry").hidden = true;
   status("");
 }
@@ -174,7 +176,27 @@ el("show-card").onclick = () => {
     list.append(term,description);
   }
 };
-el("edit-card").onclick = card;
+el("edit-card").onclick = () => {
+  card();
+  el("profile-form").elements.firstName.focus();
+};
+function showSettings() {
+  screen("settings-panel", "Instellingen", "");
+  el("open-cloud-import").hidden = settingsFromGate;
+  el("gate-title").focus();
+}
+el("show-settings").onclick = () => {
+  settingsFromGate = false;
+  showSettings();
+};
+el("gate-settings").onclick = () => {
+  settingsFromGate = true;
+  showSettings();
+};
+el("close-settings").onclick = () => {
+  if (settingsFromGate) location.reload();
+  else returnToApp();
+};
 el("open-cloud-import").onclick = () => {
   el("cloud-import").reset();
   screen("cloud-import", "Oude trainingen overzetten",
@@ -182,7 +204,7 @@ el("open-cloud-import").onclick = () => {
 };
 el("close-cloud-import").onclick = () => {
   el("cloud-import").reset();
-  el("show-card").onclick();
+  showSettings();
 };
 el("cloud-import").onsubmit = async event => {
   event.preventDefault();
@@ -211,7 +233,11 @@ el("cloud-import").onsubmit = async event => {
     el("logout").disabled = false;
   }
 };
-el("back-app").onclick = () => { const epoch = generation; enter(epoch).catch(error=>recovered(error,epoch)); };
+function returnToApp() {
+  const epoch = generation;
+  enter(epoch).catch(error => recovered(error, epoch));
+}
+el("back-app").onclick = returnToApp;
 el("import-yes").onclick = async () => {
   const epoch = generation;
   el("local-import").inert = true;

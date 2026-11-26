@@ -10,7 +10,7 @@
   <link rel="icon" type="image/png" sizes="192x192" href="./icons/tdf-192.png">
   <link rel="apple-touch-icon" sizes="180x180" href="./icons/tdf-180.png">
   <link rel="manifest" href="./manifest.webmanifest">
-  <link rel="stylesheet" href="./styles.css?v=tdf-rood">
+  <link rel="stylesheet" href="./styles.css?v=tab-instellingen">
   <script defer src="./training.js?v=spel-of-training"></script>
   <script defer src="./app.js?v=sessie-afbreken"></script>
   <script type="module">
@@ -19,7 +19,7 @@
       secure.protocol = "https:";
       location.replace(secure);
     } else {
-      import("./account.js?v=sessie-afbreken").catch(() => {
+      import("./account.js?v=tab-instellingen").catch(() => {
         document.getElementById("auth-status").textContent = "Aanmelden kon niet laden. Controleer je verbinding en vernieuw de pagina.";
       });
     }
@@ -29,7 +29,7 @@
   <a class="skip-link" href="#main">Naar inhoud</a>
   <main class="site-width" id="main" tabindex="-1">
     <section id="gate" class="account-panel" aria-labelledby="gate-title">
-      <h1 id="gate-title">Aanmelden bij
+      <h1 id="gate-title" tabindex="-1">Aanmelden bij
 TDF Trainings Lab</h1>
       <p id="gate-intro">Meld je aan met je e-mailadres en wachtwoord om verder te trainen.</p>
       <form id="access" hidden>
@@ -39,10 +39,15 @@ TDF Trainings Lab</h1>
         <button class="text-link" type="button" id="switch-auth">Nieuw account aanmaken</button>
         <button class="text-link" type="button" id="reset-password">Wachtwoord vergeten?</button>
       </form>
-      <div id="card-details" hidden><dl></dl>
-        <button type="button" class="button" id="edit-card">Spelerskaart bewerken</button>
-        <button type="button" class="button" id="open-cloud-import">Oude trainingen overzetten</button>
+      <div id="card-details" hidden>
+        <button type="button" class="button card-edit" id="edit-card" aria-label="Spelerskaart bewerken" title="Spelerskaart bewerken"><span aria-hidden="true">✎</span></button>
+        <dl></dl>
         <button type="button" class="button primary" id="back-app">Naar trainingen</button>
+      </div>
+      <div id="settings-panel" class="settings-actions" hidden>
+        <button type="button" class="button" id="open-cloud-import">Oude trainingen overzetten</button>
+        <button type="button" class="button" id="logout">Afmelden</button>
+        <button type="button" class="text-link" id="close-settings">Terug naar de app</button>
       </div>
       <form id="profile-form" hidden>
         <label>Voornaam<input name="firstName" maxlength="100" autocomplete="given-name" required></label>
@@ -55,14 +60,14 @@ TDF Trainings Lab</h1>
         <label>E-mailadres van je vroegere account<input type="email" name="email" autocomplete="off" required></label>
         <label>Wachtwoord van je vroegere account<input type="password" name="password" autocomplete="off" required></label>
         <button class="button primary">Trainingen overzetten</button>
-        <button type="button" class="button" id="close-cloud-import">Terug naar spelerskaart</button>
+        <button type="button" class="button" id="close-cloud-import">Terug naar instellingen</button>
       </form>
       <div id="local-import" hidden>
         <button class="button primary" id="import-yes">Mijn bestaande trainingen meenemen</button>
         <button class="button" id="import-no">Overslaan</button>
       </div>
       <button type="button" id="auth-retry" class="button" hidden>Opnieuw laden</button>
-      <button type="button" id="logout" class="text-link" hidden>Afmelden</button>
+      <button type="button" id="gate-settings" class="text-link" hidden>Instellingen</button>
       <p id="auth-status" role="status">Account laden…</p>
       <noscript>Schakel JavaScript in om je aan te melden.</noscript>
     </section>
@@ -75,6 +80,7 @@ TDF Trainings Lab</h1>
         <a href="#trainingen" data-nav="trainingen">Trainingen</a>
         <a href="#voortgang" data-nav="voortgang">Mijn voortgang</a>
         <button id="show-card" type="button" class="button">Spelerskaart</button>
+        <button id="show-settings" type="button" class="button">Instellingen</button>
       </nav>
     </div>
     <p id="data-notice" role="status" hidden></p>
