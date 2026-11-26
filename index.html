@@ -12,14 +12,14 @@
   <link rel="manifest" href="./manifest.webmanifest">
   <link rel="stylesheet" href="./styles.css?v=dubbelwissel-steel-de-leg">
   <script defer src="./training.js?v=spel-of-training"></script>
-  <script defer src="./app.js?v=spel-of-training"></script>
+  <script defer src="./app.js?v=sessie-afbreken"></script>
   <script type="module">
     if (location.protocol === "http:" && !["localhost","127.0.0.1"].includes(location.hostname)) {
       const secure = new URL(location.href);
       secure.protocol = "https:";
       location.replace(secure);
     } else {
-      import("./account.js?v=independent-accounts").catch(() => {
+      import("./account.js?v=sessie-afbreken").catch(() => {
         document.getElementById("auth-status").textContent = "Aanmelden kon niet laden. Controleer je verbinding en vernieuw de pagina.";
       });
     }

@@ -32,21 +32,30 @@ function notice(message) {
   dataNotice.textContent = message;
 }
 
-async function save(session) {
+async function save(session, { discard = false } = {}) {
   const store = accountStore;
   if (!store || saving) return false;
   saving = true;
   play.inert = true;
   try {
-    const next = Training.saveSession(data, session, new Date().toISOString());
-    await store.save(session, data.sessions[session.mode], next.records.find(r => r.id === session.id));
-    if (accountStore !== store) return false;
-    data = next;
+    const previous = data.sessions[session.mode];
+    if (discard) {
+      await store.discard(session);
+      if (accountStore !== store) return false;
+      const sessions = { ...data.sessions };
+      delete sessions[session.mode];
+      data = { ...data, sessions };
+    } else {
+      const next = Training.saveSession(data, session, new Date().toISOString());
+      await store.save(session, previous, next.records.find(r => r.id === session.id));
+      if (accountStore !== store) return false;
+      data = next;
+    }
     notice("");
     return true;
   } catch (error) {
     if (accountStore === store) {
-      notice("Opslaan is mislukt. Controleer je verbinding en probeer opnieuw.");
+      notice(discard ? "Afbreken is mislukt. Controleer je verbinding en probeer opnieuw." : "Opslaan is mislukt. Controleer je verbinding en probeer opnieuw.");
       if (error.message === "conflict") {
         try {
           const latest = await store.load();
@@ -372,7 +381,8 @@ function renderSession(session) {
   play.innerHTML = intro(mode, subtitle) + `<section class="panel">${controls}
     <p class="last-entry">${lastEntry(session)}</p>
     <div class="session-tools"><button class="quiet" data-undo aria-keyshortcuts="U" ${!info.count && !info.pending?.length ? "disabled" : ""}>Laatste invoer herstellen</button>
-    <a class="quiet" href="#trainingen">Pauzeer</a></div></section>`;
+    <a class="quiet" href="#trainingen">Pauzeer</a>
+    <button class="quiet" type="button" data-discard>Sessie afbreken</button></div></section>`;
 }
 
 function renderResult(record) {
@@ -473,6 +483,18 @@ async function begin(mode, level, restart = false) {
   document.querySelector("#play-title").focus({ preventScroll: true });
 }
 
+async function discardSession(session) {
+  if (saving || Training.inspect(session).done) return;
+  const label = session.mode === "test" ? "de instaptest" : "deze training";
+  if (!window.confirm(`Wil je ${label} afbreken? Je invoer voor deze sessie komt niet in Mijn voortgang.`)) return;
+  if (!await save(session, { discard: true })) return;
+  if (routeMode() === session.mode) {
+    history.replaceState(null, "", "#trainingen");
+    route();
+  }
+  notice("Sessie afgebroken.");
+}
+
 async function updateSession(next, control, message) {
   if (next === data.sessions[next.mode] || !await save(next)) return;
   if (!next.pending?.length && control.startsWith("[data-dart")) multiplier = "S";
@@ -524,6 +546,7 @@ document.addEventListener("click", (event) => {
   if (resume && session) return begin(session.mode, session.level);
   if (replay) return openMode(replay, true);
   if (!session) return;
+  if (button.hasAttribute("data-discard")) return discardSession(session);
   if (mark) return updateSession(Training.mark(session, mark === "hit"), `[data-mark="${mark}"]`, mark === "hit" ? "Gelukt." : "Gemist.");
   if (checkout) return updateSession(Training.mark(session, true, Number(checkout)), `[data-checkout="${checkout}"]`, "Uitgegooid.");
   if (visit !== undefined) return updateSession(Training.markVisit(session, Number(visit)), `[data-visit="${visit}"]`, "Beurt geregistreerd.");

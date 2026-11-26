@@ -102,6 +102,15 @@ function storeFor(uid) {
     if (record) tx.set(result,{payload:JSON.stringify(record)});
     else if (previous?.id === session.id && Training.inspect(previous).done) tx.delete(result);
   });
+  const discard = session => runTransaction(db, async tx => {
+    const ref = doc(sessions, session.mode);
+    const latest = await tx.get(ref);
+    if (!latest.exists()) return;
+    if (latest.data().payload !== JSON.stringify(session) || Training.inspect(session).done) {
+      throw Error("conflict");
+    }
+    tx.delete(ref);
+  });
   const importMissing = async (items, group, key) => {
     for (const item of items) {
       const ref = doc(group,item[key]);
@@ -110,7 +119,7 @@ function storeFor(uid) {
       });
     }
   };
-  return {load,save,async importProgress(old) {
+  return {load,save,discard,async importProgress(old) {
     await importMissing(old.records,records,"id");
     await importMissing(Object.values(old.sessions),sessions,"mode");
   }};
