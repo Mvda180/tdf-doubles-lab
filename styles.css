@@ -214,3 +214,5 @@ button.target-chip[aria-pressed="true"] { color: var(--button-ink); background: 
 .account-panel input { padding: .8rem; font: inherit; color: var(--ink); background: var(--paper); border: 1px solid var(--control-line); border-radius: .5rem; width: 100% }
 .account-panel .text-link { background: transparent; border: 0; padding: .6rem; font: inherit; color: var(--gold-light) }
 #auth-status:empty { display: none }
+
+#gate-title { white-space: pre-line; }

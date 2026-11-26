@@ -26,8 +26,8 @@ function screen(form, title, intro) {
   status("");
 }
 function login() {
-  screen("access", creating ? "TDF-account aanmaken" : "Aanmelden bij Trainings Lab",
-    creating ? "Maak je account aan en vul daarna je spelerskaart in." : "Gebruik hetzelfde e-mailadres en wachtwoord als in ProCheckout.");
+  screen("access", creating ? "TDF-account aanmaken" : "Aanmelden bij\nTDF Trainings Lab",
+    creating ? "Kies je e-mailadres en wachtwoord. Daarna maak je je spelerskaart aan." : "Meld je aan met je e-mailadres en wachtwoord om verder te trainen.");
   el("auth-submit").textContent = creating ? "Account aanmaken" : "Aanmelden";
   el("switch-auth").textContent = creating ? "Ik heb al een account" : "Nieuw account aanmaken";
   el("reset-password").hidden = creating;

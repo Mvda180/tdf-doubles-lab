@@ -6,7 +6,7 @@
   <meta name="theme-color" content="#141513">
   <meta name="description" content="Train doubles en checkouts met The Darts Family. Speel drie trainingen op je eigen niveau en volg je vooruitgang.">
   <title>TDF Trainings Lab · The Darts Family</title>
-  <link rel="stylesheet" href="./styles.css?v=spelerskaart">
+  <link rel="stylesheet" href="./styles.css?v=tdf-aanmelden">
   <script defer src="./training.js?v=spelerskaart"></script>
   <script defer src="./app.js?v=spelerskaart"></script>
   <script type="module">
@@ -15,7 +15,7 @@
       secure.protocol = "https:";
       location.replace(secure);
     } else {
-      import("./account.js?v=trainings-lab").catch(() => {
+      import("./account.js?v=tdf-aanmelden").catch(() => {
         document.getElementById("auth-status").textContent = "Aanmelden kon niet laden. Controleer je verbinding en vernieuw de pagina.";
       });
     }
@@ -38,8 +38,9 @@
   </header>
   <main class="site-width" id="main" tabindex="-1">
     <section id="gate" class="account-panel" aria-labelledby="gate-title">
-      <h1 id="gate-title">Aanmelden bij Trainings Lab</h1>
-      <p id="gate-intro">Gebruik je TDF-account om je trainingen op elk toestel te hervatten.</p>
+      <h1 id="gate-title">Aanmelden bij
+TDF Trainings Lab</h1>
+      <p id="gate-intro">Meld je aan met je e-mailadres en wachtwoord om verder te trainen.</p>
       <form id="access" hidden>
         <label>E-mailadres<input type="email" name="email" autocomplete="email" required></label>
         <label>Wachtwoord<input type="password" name="password" autocomplete="current-password" required></label>
