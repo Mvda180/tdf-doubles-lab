@@ -103,7 +103,7 @@ function renderHome() {
     const game = modes[mode];
     return `<article class="training-card">
       <span class="card-icon ${mode}" aria-hidden="true"><i></i></span>
-      <h3>${game.title}</h3><p>${game.description}</p><p class="meta">${game.meta}</p>
+      <h3>${game.title}</h3><p>${game.description}</p><p class="meta">${game.category} · ${game.meta}</p>
       <a class="button" href="${trainingLink(mode)}">${sessionInProgress(mode) ? "Speel verder" : "Kies niveau"}<span class="visually-hidden"> voor ${game.title}</span></a>
     </article>`;
   }).join("");

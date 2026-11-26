@@ -35,30 +35,35 @@ const Training = (() => {
   const modes = {
     bingo: {
       title: "Dubbelbingo",
+      category: "Spel",
       description: "Streep de doubles op je kaart af.",
       goal: "Maak je bingokaart leeg in zes beurten van drie darts. Kies bij een nieuwe beurt of na een rake dart een open double.",
       meta: "Max. 18 darts",
     },
     rescue: {
       title: "Red je finish",
+      category: "Training",
       description: "Gooi uit met twee darts na een misser.",
       goal: "Je denkbeeldige eerste dart zit al in een verkeerd vak. Gooi de resterende score uit met maximaal twee echte darts. Elke checkout levert één punt op.",
       meta: "6 situaties",
     },
     sprint: {
       title: "Pro Checkout Sprint",
+      category: "Training",
       description: "Haal je doelscore in tien checkouts.",
       goal: "Start op 40 punten en speel tien checkouts met maximaal drie darts per poging. Je krijgt +5 bij een checkout en −1 bij een misser. Je doel is 54 punten.",
       meta: "10 pogingen",
     },
     wissel: {
       title: "Dubbelwissel",
+      category: "Training",
       description: "Vergelijk mikken in blokken met wisselen na elke dart.",
       goal: "Gooi 18 darts per onderdeel op twee doubles. In blokken gooi je eerst negen darts op de ene en dan negen op de andere. Bij wisselen verander je van doel na elke dart. Rond beide onderdelen af om je percentages te vergelijken.",
       meta: "36 darts",
     },
     leg: {
       title: "Steel de Leg",
+      category: "Spel",
       description: "Win de leg met je laatste kans op de double.",
       goal: "Speel tien legs tegen een gesimuleerde tegenstander. Je krijgt één, twee of drie darts op de getoonde double. Raak je die, dan win je de leg meteen. Zijn je darts op, dan wint je tegenstander.",
       meta: "10 legs",
