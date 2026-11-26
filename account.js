@@ -11,12 +11,12 @@ const auth = getAuth(app);
 auth.languageCode = "nl";
 const db = getFirestore(app);
 const el = id => document.getElementById(id);
-const nav = document.querySelector("nav");
+const trainingMenu = el("training-menu");
 const status = message => { el("auth-status").textContent = message; };
 let player, creating = false, generation = 0, progressStore, local;
 function screen(form, title, intro) {
   window.doublesLab.setAccount(null);
-  nav.hidden = true;
+  trainingMenu.hidden = true;
   el("gate").hidden = false;
   for (const id of ["access", "profile-form", "local-import", "card-details"]) el(id).hidden = id !== form;
   el("gate-title").textContent = title;
@@ -126,7 +126,7 @@ async function enter(epoch) {
   const data = await store.load();
   if (epoch !== generation) return;
   el("gate").hidden = true;
-  nav.hidden = false;
+  trainingMenu.hidden = false;
   window.doublesLab.setAccount(store,data);
 }
 function recovered(error, epoch) {

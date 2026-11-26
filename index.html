@@ -10,7 +10,7 @@
   <link rel="icon" type="image/png" sizes="192x192" href="./icons/tdf-192.png">
   <link rel="apple-touch-icon" sizes="180x180" href="./icons/tdf-180.png">
   <link rel="manifest" href="./manifest.webmanifest">
-  <link rel="stylesheet" href="./styles.css?v=tdf-logo">
+  <link rel="stylesheet" href="./styles.css?v=training-menu">
   <script defer src="./training.js?v=spelerskaart"></script>
   <script defer src="./app.js?v=spelerskaart"></script>
   <script type="module">
@@ -19,7 +19,7 @@
       secure.protocol = "https:";
       location.replace(secure);
     } else {
-      import("./account.js?v=tdf-aanmelden").catch(() => {
+      import("./account.js?v=training-menu").catch(() => {
         document.getElementById("auth-status").textContent = "Aanmelden kon niet laden. Controleer je verbinding en vernieuw de pagina.";
       });
     }
@@ -27,19 +27,6 @@
 </head>
 <body>
   <a class="skip-link" href="#main">Naar inhoud</a>
-  <header class="topbar">
-    <div class="site-width header-inner">
-      <a class="brand" href="#trainingen" aria-label="TDF Trainings Lab, trainingen">
-        <img class="brand-mark" src="./icons/tdf-180.png" alt="" width="52" height="52">
-        <span><strong>TRAININGS LAB</strong><small>THE DARTS FAMILY</small></span>
-      </a>
-      <nav hidden aria-label="Hoofdnavigatie">
-        <a href="#trainingen" data-nav="trainingen">Trainingen</a>
-        <a href="#voortgang" data-nav="voortgang">Mijn voortgang</a>
-      <button id="show-card" class="button">Spelerskaart</button>
-      </nav>
-    </div>
-  </header>
   <main class="site-width" id="main" tabindex="-1">
     <section id="gate" class="account-panel" aria-labelledby="gate-title">
       <h1 id="gate-title">Aanmelden bij
@@ -72,6 +59,17 @@ TDF Trainings Lab</h1>
       <p id="auth-status" role="status">Account laden…</p>
       <noscript>Schakel JavaScript in om je aan te melden.</noscript>
     </section>
+    <div id="training-menu" hidden>
+      <a class="brand" href="#trainingen" aria-label="TDF Trainings Lab, trainingen">
+        <img class="brand-mark" src="./icons/tdf-180.png" alt="" width="64" height="64">
+        <strong>TDF Trainings Lab</strong>
+      </a>
+      <nav aria-label="Hoofdnavigatie">
+        <a href="#trainingen" data-nav="trainingen">Trainingen</a>
+        <a href="#voortgang" data-nav="voortgang">Mijn voortgang</a>
+        <button id="show-card" type="button" class="button">Spelerskaart</button>
+      </nav>
+    </div>
     <p id="data-notice" role="status" hidden></p>
     <section hidden id="home" aria-label="Trainingen">
       <div class="hero">
@@ -104,7 +102,6 @@ TDF Trainings Lab</h1>
     </section>
     <section id="play" class="inner-view" aria-labelledby="play-title" hidden></section>
   </main>
-  <footer class="site-width footer"><span>The Darts Family</span><span>Trainings Lab</span></footer>
   <div id="announcements" class="visually-hidden" aria-live="polite" aria-atomic="true"></div>
 </body>
 </html>
