@@ -206,3 +206,11 @@ button.target-chip[aria-pressed="true"] { color: var(--button-ink); background: 
   #overview { grid-template-columns: 1fr; gap: 3px; }
   .checkout-buttons { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 }
+.account-panel { max-width: 32rem; margin: clamp(2rem,7vw,6rem) auto; padding: clamp(1.2rem,4vw,2.5rem); background: var(--surface); border: 1px solid var(--line); border-top: 3px solid var(--gold); border-radius: 1rem }
+.account-panel h1 { font-size: clamp(1.8rem,5vw,2.6rem); margin: 0 0 .7rem }
+.account-panel p { line-height: 1.5; color: var(--subtle) }
+.account-panel form, #local-import { display: grid; gap: 1rem }
+.account-panel label { display: grid; gap: .4rem }
+.account-panel input { padding: .8rem; font: inherit; color: var(--ink); background: var(--paper); border: 1px solid var(--control-line); border-radius: .5rem; width: 100% }
+.account-panel .text-link { background: transparent; border: 0; padding: .6rem; font: inherit; color: var(--gold-light) }
+#auth-status:empty { display: none }
