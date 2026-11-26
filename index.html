@@ -19,7 +19,7 @@
       secure.protocol = "https:";
       location.replace(secure);
     } else {
-      import("./account.js?v=training-menu").catch(() => {
+      import("./account.js?v=independent-accounts").catch(() => {
         document.getElementById("auth-status").textContent = "Aanmelden kon niet laden. Controleer je verbinding en vernieuw de pagina.";
       });
     }
@@ -41,6 +41,7 @@ TDF Trainings Lab</h1>
       </form>
       <div id="card-details" hidden><dl></dl>
         <button type="button" class="button" id="edit-card">Spelerskaart bewerken</button>
+        <button type="button" class="button" id="open-cloud-import">Oude trainingen overzetten</button>
         <button type="button" class="button primary" id="back-app">Naar trainingen</button>
       </div>
       <form id="profile-form" hidden>
@@ -49,6 +50,12 @@ TDF Trainings Lab</h1>
         <label>Bijnaam<input name="nickname" maxlength="100" autocomplete="nickname"></label>
         <label>Met welke darts speel je?<input name="darts" maxlength="200"></label>
         <button class="button primary">Spelerskaart bewaren</button>
+      </form>
+      <form id="cloud-import" hidden>
+        <label>E-mailadres van je vroegere account<input type="email" name="email" autocomplete="off" required></label>
+        <label>Wachtwoord van je vroegere account<input type="password" name="password" autocomplete="off" required></label>
+        <button class="button primary">Trainingen overzetten</button>
+        <button type="button" class="button" id="close-cloud-import">Terug naar spelerskaart</button>
       </form>
       <div id="local-import" hidden>
         <button class="button primary" id="import-yes">Mijn bestaande trainingen meenemen</button>

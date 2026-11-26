@@ -1,7 +1,7 @@
-// Public Firebase Web SDK identifiers for the shared TDF project.
+// Firebase Web SDK configuration for the independent Trainings Lab project.
 export const firebaseConfig = {
-  apiKey: "AIzaSyDxaTJVcAY6JjX6Yy1hMJwll4JqJ6F3Hd0",
-  authDomain: "tdf-app-b3af2.firebaseapp.com",
-  projectId: "tdf-app-b3af2",
-  appId: "1:624063173736:web:35a3933b21ec5cddcc17dd"
+  apiKey: "AIzaSyDEQ7TRehzEDhOgI1y8IXFis_C207YrAek",
+  authDomain: "tdf-trainings-lab.firebaseapp.com",
+  projectId: "tdf-trainings-lab",
+  appId: "1:671421328670:web:b54e487d6b69f60e816d0f"
 };
