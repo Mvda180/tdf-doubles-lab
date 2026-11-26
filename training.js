@@ -7,6 +7,22 @@ const Training = (() => {
     groei: { label: "Groei", bingo: [20, 16, 12, 8], rescue: [12, 18, 10], sprint: [24, 36, 40] },
     uitdaging: { label: "Uitdaging", bingo: doubles, rescue: [25, 35, 15], sprint: [41, 48, 52] },
   };
+  const switchPairs = {
+    start: [[20, 16], [16, 8], [8, 20]],
+    groei: [[20, 12], [18, 8], [10, 16]],
+    uitdaging: [[1, 18], [7, 16], [11, 4], [15, 10], [3, 20]],
+  };
+  const legTargets = {
+    start: [20, 16, 8, 20, 16, 8, 16, 20, 8, 16],
+    groei: [20, 12, 16, 18, 8, 10, 12, 18, 16, 20],
+    uitdaging: [16, 13, 20, 9, 25, 6, 18, 14, 11, 8],
+  };
+  const legBudgets = {
+    start: [3],
+    groei: [3, 2],
+    uitdaging: [2, 1],
+  };
+  const doubleLabel = (target) => target === 25 ? "Bull" : `D${target}`;
   const scenarios = {
     16: [32, 16, "D8"], 20: [40, 20, "D10"], 8: [16, 8, "D4"],
     12: [24, 12, "D6"], 18: [36, 18, "D9"], 10: [20, 10, "D5"],
@@ -35,6 +51,18 @@ const Training = (() => {
       goal: "Start op 40 punten en speel tien checkouts met maximaal drie darts per poging. Je krijgt +5 bij een checkout en −1 bij een misser. Je doel is 54 punten.",
       meta: "10 pogingen",
     },
+    wissel: {
+      title: "Dubbelwissel",
+      description: "Vergelijk mikken in blokken met wisselen na elke dart.",
+      goal: "Gooi 18 darts per onderdeel op twee doubles. In blokken gooi je eerst negen darts op de ene en dan negen op de andere. Bij wisselen verander je van doel na elke dart. Rond beide onderdelen af om je percentages te vergelijken.",
+      meta: "36 darts",
+    },
+    leg: {
+      title: "Steel de Leg",
+      description: "Win de leg met je laatste kans op de double.",
+      goal: "Speel tien legs tegen een gesimuleerde tegenstander. Je krijgt één, twee of drie darts op de getoonde double. Raak je die, dan win je de leg meteen. Zijn je darts op, dan wint je tegenstander.",
+      meta: "10 legs",
+    },
     test: {
       title: "Instaptest",
       goal: "Gooi zes darts per double, in twee beurten van drie. Registreer elke dart, ook als je het doel eerder al raakte.",
@@ -43,7 +71,7 @@ const Training = (() => {
   const isMode = (mode) => Object.hasOwn(modes, mode);
   const isLevel = (level) => Object.hasOwn(levels, level);
   const recommend = (hits) => hits >= 12 ? "uitdaging" : hits >= 6 ? "groei" : "start";
-  const totalFor = (mode) => ({ test: 36, bingo: 18, rescue: 6, sprint: 10 })[mode];
+  const totalFor = (mode) => ({ test: 36, bingo: 18, rescue: 6, sprint: 10, wissel: 36, leg: 10 })[mode];
   const isCheckout = (mode) => mode === "rescue" || mode === "sprint";
   const dartLimit = (mode) => mode === "rescue" ? 2 : 3;
   const boardNumbers = Array.from({ length: 20 }, (_, index) => index + 1);
@@ -52,8 +80,42 @@ const Training = (() => {
     for (const number of boardNumbers) dartScores[prefix + number] = number * multiplier;
   }
 
-  function start(mode, level, id) {
-    return { id, mode, level: mode === "test" ? null : level, attempts: [], selection: null };
+  function start(mode, level, id, completed = 0) {
+    const session = { id, mode, level: mode === "test" ? null : level, attempts: [], selection: null };
+    if (mode === "wissel") {
+      const pairs = switchPairs[level];
+      session.pair = pairs[completed % pairs.length];
+      session.switchFirst = completed % 2 === 1;
+    }
+    return session;
+  }
+
+  function switchPhase(session, index) {
+    return (index < 18) === session.switchFirst ? "wisselen" : "blokken";
+  }
+
+  function inspectLeg({ level, attempts }, info) {
+    const budgets = legBudgets[level];
+    const budgetStats = Object.fromEntries(budgets.map(budget => [budget, { legs: 0, wins: 0, darts: 0 }]));
+    let legs = 0;
+    let used = 0;
+    let lastWinner = null;
+    for (const dart of attempts) {
+      const budget = budgets[legs % budgets.length];
+      const row = budgetStats[budget];
+      row.darts++;
+      used++;
+      if (dart.hit || used === budget) {
+        row.legs++;
+        row.wins += Number(dart.hit);
+        lastWinner = dart.hit ? "Jij" : "Tegenstander";
+        legs++;
+        used = 0;
+      }
+    }
+    const budget = budgets[legs % budgets.length];
+    return { ...info, done: legs >= info.max, legs, budget, left: budget - used,
+      target: legTargets[level][legs], budgetStats, lastWinner };
   }
 
   function tally(attempts) {
@@ -77,6 +139,13 @@ const Training = (() => {
     const { count, hits, targets: targetStats } = tally(attempts);
     const max = totalFor(mode);
     const info = { count, max, hits, targetStats, done: count >= max };
+    if (mode === "wissel") {
+      const phase = switchPhase(session, count);
+      const index = count % 18;
+      const target = session.pair[phase === "wisselen" ? index % 2 : Math.floor(index / 9)];
+      return { ...info, phase, target };
+    }
+    if (mode === "leg") return inspectLeg(session, info);
     if (mode === "test") {
       const breakdown = Object.fromEntries(doubles.map((double) => [double, targetStats[double]?.hits ?? 0]));
       return { ...info, target: doubles[Math.floor(count / 6)], breakdown, recommendation: recommend(hits) };
@@ -173,6 +242,12 @@ const Training = (() => {
     const record = { id: session.id, mode: session.mode, level: session.level, date, hits: info.hits, targetStats: info.targetStats };
     if (session.mode === "test") return { ...record, breakdown: info.breakdown, recommendation: info.recommendation };
     if (session.mode === "bingo") return { ...record, remaining: info.remaining, darts: info.count, targetCount: info.targets.length };
+    if (session.mode === "wissel") {
+      const phaseStats = Object.fromEntries(["blokken", "wisselen"].map(phase =>
+        [phase, tally(session.attempts.filter((_, index) => switchPhase(session, index) === phase)).targets]));
+      return { ...record, phaseStats };
+    }
+    if (session.mode === "leg") return { ...record, darts: info.count, budgetStats: info.budgetStats };
     const attempts = session.attempts.filter((attempt) => attempt.hit && Number.isInteger(attempt.dartsUsed));
     const checkoutDarts = attempts.reduce((sum, attempt) => sum + attempt.dartsUsed, 0);
     const finishing = { ...record, checkoutDarts, measuredCheckouts: attempts.length };
@@ -203,7 +278,7 @@ const Training = (() => {
     let measuredCheckouts = 0;
     let checkoutDarts = 0;
     for (const record of records) {
-      attempts += record.mode === "bingo" ? record.darts : totalFor(record.mode);
+      attempts += record.darts ?? totalFor(record.mode);
       hits += record.hits;
       measuredCheckouts += record.measuredCheckouts ?? 0;
       checkoutDarts += record.checkoutDarts ?? 0;
@@ -218,7 +293,7 @@ const Training = (() => {
     return { attempts, hits, targets, measuredCheckouts, checkoutDarts };
   }
 
-  return { doubles, levels, modes, boardNumbers, isMode, isLevel, isCheckout, oneDartFinish,
+  return { doubles, levels, modes, boardNumbers, doubleLabel, legBudgets, isMode, isLevel, isCheckout, oneDartFinish,
     recommend, start, inspect, mark, markVisit, scoreDart, toggleEntry, select, undo, result, readProgress, saveSession, summarize };
 })();
 

@@ -1,6 +1,6 @@
 "use strict";
 
-const { doubles, levels, modes, isMode, isLevel, isCheckout } = Training;
+const { doubles, levels, modes, doubleLabel, legBudgets, isMode, isLevel, isCheckout } = Training;
 const home = document.querySelector("#home");
 const play = document.querySelector("#play");
 const historyPage = document.querySelector("#history");
@@ -9,7 +9,7 @@ const dataNotice = document.querySelector("#data-notice");
 const dateFormat = new Intl.DateTimeFormat("nl-BE", {
   day: "numeric", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit",
 });
-const gameKeys = ["bingo", "rescue", "sprint"];
+const gameKeys = ["bingo", "rescue", "sprint", "wissel", "leg"];
 const percentFormat = new Intl.NumberFormat("nl-BE", { style: "percent", maximumFractionDigits: 1 });
 const decimalFormat = new Intl.NumberFormat("nl-BE", { maximumFractionDigits: 1 });
 let data = Training.readProgress(null);
@@ -85,6 +85,8 @@ function trainingLink(mode) {
 
 function scoreText(record) {
   switch (record.mode) {
+    case "wissel": return `${record.hits}/36 doubles`;
+    case "leg": return `${record.hits}/10 legs gewonnen`;
     case "test": return `${record.hits}/36 geraakt`;
     case "bingo": return `${record.hits}/${record.targetCount} doubles`;
     case "rescue": return `${record.hits}/6 finishes`;
@@ -132,6 +134,41 @@ function rate(hits, count) {
 function scoreDetails(records, mode, label) {
   if (!records.length) return "";
   const { hits, attempts, targets, measuredCheckouts, checkoutDarts } = Training.summarize(records);
+  if (mode === "wissel") {
+    return `<div class="stats-table"><table aria-label="${label}">
+      <thead><tr><th scope="col">Double</th><th scope="col">In blokken</th><th scope="col">Na elke dart wisselen</th></tr></thead>
+      <tbody>${Object.keys(targets).map(target => {
+        const phases = ["blokken", "wisselen"].map(phase => {
+          let hits = 0;
+          let attempts = 0;
+          for (const record of records) {
+            const row = record.phaseStats[phase][target];
+            hits += row?.hits ?? 0;
+            attempts += row?.attempts ?? 0;
+          }
+          return attempts ? `${hits}/${attempts} · ${rate(hits, attempts)}` : "—";
+        });
+        return `<tr><th scope="row">${doubleLabel(Number(target))}</th><td>${phases[0]}</td><td>${phases[1]}</td></tr>`;
+      }).join("")}</tbody>
+    </table></div>`;
+  }
+  if (mode === "leg") {
+    const budgets = {};
+    for (const record of records) {
+      for (const [budget, stats] of Object.entries(record.budgetStats)) {
+        const row = budgets[budget] ??= { wins: 0, legs: 0, darts: 0 };
+        row.wins += stats.wins;
+        row.legs += stats.legs;
+        row.darts += stats.darts;
+      }
+    }
+    return `<div class="stats-table"><table aria-label="${label}">
+      <thead><tr><th scope="col">Darts beschikbaar bij de start</th><th scope="col">Legs gewonnen</th><th scope="col">Doubles geraakt</th></tr></thead>
+      <tbody>${Object.entries(budgets).map(([budget, row]) => `<tr><th scope="row">${budget}</th>
+        <td>${row.wins}/${row.legs} · ${rate(row.wins, row.legs)}</td>
+        <td>${row.wins}/${row.darts} · ${rate(row.wins, row.darts)}</td></tr>`).join("")}</tbody>
+    </table></div>`;
+  }
   const checkout = isCheckout(mode);
   const hasTargets = Object.keys(targets).length > 0;
   return `<div class="score-details">
@@ -204,7 +241,7 @@ function renderSetup(mode) {
       <div class="level-picker" role="radiogroup" aria-labelledby="level-title">
         ${Object.entries(levels).map(([id, level]) => `<label>
           <input type="radio" name="level" value="${id}" ${id === suggested ? "checked" : ""}>
-          <span><strong>${level.label}</strong><small>${mode === "bingo" ? `${level.bingo.length} doubles` : level[mode].join(", ")}</small></span>
+          <span><strong>${level.label}</strong><small>${mode === "bingo" ? `${level.bingo.length} doubles` : mode === "wissel" ? ({ start: "D20, D16 en D8", groei: "Meer doelen rond het bord", uitdaging: "Minder vertrouwde doubles" })[id] : mode === "leg" ? `${[...legBudgets[id]].reverse().join(" of ")} darts per leg` : level[mode].join(", ")}</small></span>
         </label>`).join("")}
       </div>
       <button class="button primary" type="submit">${resume ? "Start nieuwe training" : "Start training"}</button>
@@ -239,7 +276,7 @@ function lastEntry(session) {
     return `Laatste poging ${last.target} · ${outcome}${last.darts ? ` · ${last.darts.join(" · ")}` : ""}`;
   }
   if (last.shots) return `Laatste invoer D${last.target} · ${last.hits}/${last.shots} raak`;
-  return `Laatste dart D${last.target} · ${last.hit ? "raak" : "mis"}`;
+  return `Laatste dart ${doubleLabel(last.target)} · ${last.hit ? "raak" : "mis"}`;
 }
 
 function checkoutButtons(session, info) {
@@ -282,6 +319,19 @@ function renderSession(session) {
   }
   let controls;
   switch (mode) {
+    case "wissel":
+      controls = meter(`Dart ${info.count + 1} van 36`, `${info.hits} geraakt`, info.count, info.max) +
+        `<p class="target">${doubleLabel(info.target)}</p>
+        <p class="hint">Onderdeel ${Math.floor(info.count / 18) + 1} van 2 · ${info.phase === "blokken" ? "In blokken" : "Wissel na elke dart"} · Dart ${info.count % 18 + 1} van 18</p>` +
+        markButtons("Raak", "Gemist");
+      break;
+    case "leg":
+      controls = meter(`Leg ${info.legs + 1} van 10`, `Jij ${info.hits} – ${info.legs - info.hits} Tegenstander`, info.legs, info.max) +
+        `<p class="target">${doubleLabel(info.target)}</p>
+        <p>${info.left} ${info.left === 1 ? "dart" : "darts"} over om deze leg te winnen.</p>
+        ${info.lastWinner ? `<p class="hint">Vorige leg · ${info.lastWinner === "Jij" ? "Jij won" : "Tegenstander won"}</p>` : ""}` +
+        markButtons("Raak", "Gemist");
+      break;
     case "test":
       controls = meter(`Dart ${info.count + 1} van 36`, `${info.hits} geraakt`, info.count, 36) +
         `<p class="target">D${info.target}</p>
@@ -328,6 +378,12 @@ function renderSession(session) {
 function renderResult(record) {
   let detail;
   switch (record.mode) {
+    case "wissel":
+      detail = "<p>Vergelijk je raakpercentage op dezelfde doubles in beide onderdelen.</p>";
+      break;
+    case "leg":
+      detail = `<p>Jij <strong>${record.hits}</strong> – <strong>${10 - record.hits}</strong> tegenstander · ${record.darts} darts gegooid.</p>`;
+      break;
     case "test": {
       const earlier = data.records.find((item) => item.mode === "test" && item.id !== record.id);
       detail = `<p>Voorgesteld niveau <strong>${levels[record.recommendation].label}</strong>. Je kunt per training zelf kiezen.</p>
@@ -408,7 +464,8 @@ async function begin(mode, level, restart = false) {
   }
   if (ongoing && !window.confirm("Je hebt nog een onvoltooide sessie voor deze training. Deze vervangen?")) return;
   const id = globalThis.crypto?.randomUUID?.() ?? `${Date.now()}-${Math.random()}`;
-  const session = Training.start(mode, level, id);
+  const completed = mode === "wissel" ? data.records.filter(record => record.mode === mode && record.level === level).length : 0;
+  const session = Training.start(mode, level, id, completed);
   if (!await save(session)) return;
   multiplier = "S";
   if (location.hash !== trainingLink(mode)) history.pushState(null, "", trainingLink(mode));
@@ -424,7 +481,7 @@ async function updateSession(next, control, message) {
   announcements.textContent = info.done
     ? `Sessie afgerond. ${scoreText(data.records.find((record) => record.id === next.id))}.`
     : isCheckout(next.mode) ? `${message} ${info.visit.remaining} over.`
-      : `${message} Volgend doel D${info.target}.`;
+      : `${message} Volgend doel ${doubleLabel(info.target)}.`;
   const nextControl = play.querySelector(control);
   (nextControl?.disabled ? null : nextControl)?.focus({ preventScroll: true });
   if (!nextControl || nextControl.disabled) play.querySelector(info.done ? "#play-title" : "[data-mark], [data-multiplier]")?.focus({ preventScroll: true });

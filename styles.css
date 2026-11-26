@@ -208,3 +208,7 @@ button.target-chip[aria-pressed="true"] { color: var(--button-ink); background: 
 #auth-status:empty { display: none }
 
 #gate-title { white-space: pre-line; }
+
+.card-icon.wissel i::before { content: "⇄"; font-size: 1.45rem; font-weight: 800; }
+.card-icon.leg i { width: 19px; height: 19px; border: 1.5px solid; border-radius: 50%; }
+.card-icon.leg i::before { content: ""; position: absolute; inset: 5px; background: currentColor; border-radius: 50%; }
