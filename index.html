@@ -8,8 +8,18 @@
   <title>TDF Doubles Lab · The Darts Family</title>
   <link rel="stylesheet" href="./styles.css?v=spelerskaart">
   <script defer src="./training.js?v=spelerskaart"></script>
-  <script type="module" src="./account.js"></script>
   <script defer src="./app.js?v=spelerskaart"></script>
+  <script type="module">
+    if (location.protocol === "http:" && !["localhost","127.0.0.1"].includes(location.hostname)) {
+      const secure = new URL(location.href);
+      secure.protocol = "https:";
+      location.replace(secure);
+    } else {
+      import("./account.js").catch(() => {
+        document.getElementById("auth-status").textContent = "Aanmelden kon niet laden. Controleer je verbinding en vernieuw de pagina.";
+      });
+    }
+  </script>
 </head>
 <body>
   <a class="skip-link" href="#main">Naar inhoud</a>
