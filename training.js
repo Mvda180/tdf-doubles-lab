@@ -44,45 +44,113 @@ const Training = (() => {
   const isLevel = (level) => Object.hasOwn(levels, level);
   const recommend = (hits) => hits >= 12 ? "uitdaging" : hits >= 6 ? "groei" : "start";
   const totalFor = (mode) => ({ test: 36, bingo: 18, rescue: 6, sprint: 10 })[mode];
+  const isCheckout = (mode) => mode === "rescue" || mode === "sprint";
+  const dartLimit = (mode) => mode === "rescue" ? 2 : 3;
+  const boardNumbers = Array.from({ length: 20 }, (_, index) => index + 1);
+  const dartScores = { "0": 0, "25": 25, Bull: 50 };
+  for (const [prefix, multiplier] of [["S", 1], ["D", 2], ["T", 3]]) {
+    for (const number of boardNumbers) dartScores[prefix + number] = number * multiplier;
+  }
 
   function start(mode, level, id) {
     return { id, mode, level: mode === "test" ? null : level, attempts: [], selection: null };
   }
 
+  function tally(attempts) {
+    const targets = {};
+    let count = 0;
+    let hits = 0;
+    for (const attempt of attempts) {
+      const row = targets[attempt.target] ??= { attempts: 0, hits: 0 };
+      const shots = attempt.shots ?? 1;
+      const made = attempt.hits ?? Number(attempt.hit);
+      row.attempts += shots;
+      row.hits += made;
+      count += shots;
+      hits += made;
+    }
+    return { count, hits, targets };
+  }
+
   function inspect(session) {
     const { mode, level, attempts } = session;
-    const count = attempts.length;
+    const { count, hits, targets: targetStats } = tally(attempts);
     const max = totalFor(mode);
-    const hits = attempts.filter((attempt) => attempt.hit).length;
-    const info = { count, max, hits, done: count === max };
+    const info = { count, max, hits, targetStats, done: count >= max };
     if (mode === "test") {
-      const breakdown = Object.fromEntries(doubles.map((double, index) => [
-        double, attempts.slice(index * 6, index * 6 + 6).filter((attempt) => attempt.hit).length,
-      ]));
+      const breakdown = Object.fromEntries(doubles.map((double) => [double, targetStats[double]?.hits ?? 0]));
       return { ...info, target: doubles[Math.floor(count / 6)], breakdown, recommendation: recommend(hits) };
     }
     if (mode === "bingo") {
       const targets = levels[level].bingo;
-      const remaining = targets.filter((target) => !attempts.some((attempt) => attempt.hit && attempt.target === target));
+      const remaining = targets.filter((target) => !targetStats[target]?.hits);
       const canChoose = count % 3 === 0 || attempts.at(-1)?.hit === true;
       const target = remaining.includes(session.selection) ? session.selection : remaining[0];
       return { ...info, targets, remaining, canChoose, target, done: info.done || remaining.length === 0 };
     }
-    if (mode === "rescue") {
-      const target = levels[level].rescue[count % 3];
-      return { ...info, target, scenario: scenarios[target] };
-    }
-    const scores = levels[level].sprint;
+    const scores = levels[level][mode];
     const target = scores[count % scores.length];
-    return { ...info, target, finish: finishes[target], score: 40 + hits * 5 - (count - hits) };
+    const limit = dartLimit(mode);
+    const pending = session.pending ?? [];
+    return { ...info, target, limit, pending, visit: evaluateVisit(target, pending, limit),
+      scenario: scenarios[target], finish: finishes[target], score: 40 + hits * 5 - (count - hits) };
   }
 
-  function mark(session, hit) {
+  function append(session, attempt, selection = null) {
+    return { ...session, attempts: [...session.attempts, attempt], selection, pending: [] };
+  }
+
+  function mark(session, hit, dartsUsed) {
+    const info = inspect(session);
+    if (info.done || info.pending?.length) return session;
+    const attempt = { hit, target: info.target };
+    if (dartsUsed !== undefined) {
+      if (!isCheckout(session.mode) || !hit || !Number.isInteger(dartsUsed) ||
+          dartsUsed < 1 || dartsUsed > info.limit || (dartsUsed === 1 && !oneDartFinish(info.target))) return session;
+      attempt.dartsUsed = dartsUsed;
+    }
+    return append(session, attempt, session.mode === "bingo" && !hit ? info.target : null);
+  }
+
+  function markVisit(session, hits) {
+    const { count, done, target } = inspect(session);
+    if (done || !Number.isInteger(hits)) return session;
+    if (session.mode === "test" && count % 3 === 0 && hits >= 0 && hits <= 3) {
+      return append(session, { target, shots: 3, hits });
+    }
+    if (session.mode === "bingo" && hits === 0) {
+      return append(session, { target, shots: 3 - count % 3, hits: 0 }, target);
+    }
+    return session;
+  }
+
+  function oneDartFinish(score) {
+    return score === 50 || (score >= 2 && score <= 40 && score % 2 === 0);
+  }
+
+  function evaluateVisit(target, darts, limit) {
+    let remaining = target;
+    for (const dart of darts) {
+      remaining -= dartScores[dart];
+      if (remaining === 0 && (dart.startsWith("D") || dart === "Bull")) return { remaining, outcome: "finish" };
+      if (remaining <= 1) return { remaining: target, outcome: "bust" };
+    }
+    return { remaining, outcome: darts.length === limit ? "miss" : null };
+  }
+
+  function scoreDart(session, dart) {
+    if (!isCheckout(session.mode) || !Object.hasOwn(dartScores, dart)) return session;
     const info = inspect(session);
     if (info.done) return session;
-    const attempt = { hit, target: info.target };
-    const next = { ...session, attempts: [...session.attempts, attempt] };
-    return { ...next, selection: session.mode === "bingo" && !hit ? info.target : null };
+    const darts = [...info.pending, dart];
+    const { outcome } = evaluateVisit(info.target, darts, info.limit);
+    if (!outcome) return { ...session, pending: darts };
+    return append(session, { target: info.target, hit: outcome === "finish", outcome, darts, dartsUsed: darts.length });
+  }
+
+  function toggleEntry(session) {
+    if (!isCheckout(session.mode) || session.pending?.length || inspect(session).done) return session;
+    return { ...session, detailed: !session.detailed };
   }
 
   function select(session, target) {
@@ -92,21 +160,66 @@ const Training = (() => {
   }
 
   function undo(session) {
-    if (session.attempts.length === 0) return session;
-    return { ...session, attempts: session.attempts.slice(0, -1), selection: session.attempts.at(-1).target };
+    if (session.pending?.length) return { ...session, pending: session.pending.slice(0, -1) };
+    const last = session.attempts.at(-1);
+    if (!last) return session;
+    return { ...session, attempts: session.attempts.slice(0, -1), selection: last.target,
+      pending: last.darts?.slice(0, -1) ?? [], detailed: last.darts ? true : session.detailed };
   }
 
   function result(session, date) {
     const info = inspect(session);
     if (!info.done) return null;
-    const record = { id: session.id, mode: session.mode, level: session.level, date, hits: info.hits };
+    const record = { id: session.id, mode: session.mode, level: session.level, date, hits: info.hits, targetStats: info.targetStats };
     if (session.mode === "test") return { ...record, breakdown: info.breakdown, recommendation: info.recommendation };
     if (session.mode === "bingo") return { ...record, remaining: info.remaining, darts: info.count, targetCount: info.targets.length };
-    if (session.mode === "sprint") return { ...record, score: info.score };
-    return record;
+    const attempts = session.attempts.filter((attempt) => attempt.hit && Number.isInteger(attempt.dartsUsed));
+    const checkoutDarts = attempts.reduce((sum, attempt) => sum + attempt.dartsUsed, 0);
+    const finishing = { ...record, checkoutDarts, measuredCheckouts: attempts.length };
+    return session.mode === "sprint" ? { ...finishing, score: info.score } : finishing;
   }
 
-  return { doubles, levels, modes, isMode, isLevel, recommend, start, inspect, mark, select, undo, result };
+  function readProgress(raw) {
+    if (raw === null) return { version: 2, records: [], sessions: {} };
+    const stored = JSON.parse(raw);
+    if (!Array.isArray(stored?.records)) throw new Error("Ongeldige trainingsopslag");
+    if (stored.version === 2 && stored.sessions && typeof stored.sessions === "object" && !Array.isArray(stored.sessions)) return stored;
+    if (stored.version !== undefined) throw new Error("Onbekende trainingsopslag");
+    const sessions = stored.session && isMode(stored.session.mode) ? { [stored.session.mode]: stored.session } : {};
+    return { version: 2, records: stored.records, sessions };
+  }
+
+  function saveSession(progress, session, date) {
+    const records = progress.records.filter((record) => record.id !== session.id);
+    const finished = result(session, date);
+    if (finished) records.unshift(finished);
+    return { ...progress, sessions: { ...progress.sessions, [session.mode]: session }, records };
+  }
+
+  function summarize(records) {
+    const targets = {};
+    let attempts = 0;
+    let hits = 0;
+    let measuredCheckouts = 0;
+    let checkoutDarts = 0;
+    for (const record of records) {
+      attempts += record.mode === "bingo" ? record.darts : totalFor(record.mode);
+      hits += record.hits;
+      measuredCheckouts += record.measuredCheckouts ?? 0;
+      checkoutDarts += record.checkoutDarts ?? 0;
+      const legacyTest = record.mode === "test" && record.breakdown
+        ? Object.fromEntries(doubles.map((target) => [target, { attempts: 6, hits: record.breakdown[target] }])) : {};
+      for (const [target, values] of Object.entries(record.targetStats ?? legacyTest)) {
+        const total = targets[target] ??= { attempts: 0, hits: 0 };
+        total.attempts += values.attempts;
+        total.hits += values.hits;
+      }
+    }
+    return { attempts, hits, targets, measuredCheckouts, checkoutDarts };
+  }
+
+  return { doubles, levels, modes, boardNumbers, isMode, isLevel, isCheckout, oneDartFinish,
+    recommend, start, inspect, mark, markVisit, scoreDart, toggleEntry, select, undo, result, readProgress, saveSession, summarize };
 })();
 
 if (typeof module !== "undefined") module.exports = Training;

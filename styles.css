@@ -111,6 +111,28 @@ progress::-moz-progress-bar { background: var(--gold); }
 .target { margin: 13px 0 4px; color: var(--gold-light); font-size: clamp(3.2rem, 12vw, 5.2rem); font-weight: 850; letter-spacing: -.075em; line-height: .97; }
 .button-row { display: flex; flex-wrap: wrap; gap: 9px; margin-top: 18px; }
 .button-row .button { flex: 1; }
+.score-buttons { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; margin-top: 14px; }
+.score-buttons .button { min-height: 56px; touch-action: manipulation; }
+.checkout-buttons { grid-template-columns: repeat(auto-fit, minmax(110px, 1fr)); }
+.checkout-buttons .button { padding-inline: 6px; }
+.visit-controls { border-top: 1px solid var(--line); margin-top: 16px; padding-top: 12px; }
+.visit-controls p, .entry-toggle .hint { margin: 0; color: var(--subtle); }
+.visit-controls .score-buttons { margin-top: 8px; }
+.entry-toggle { display: flex; flex-wrap: wrap; gap: 8px 14px; align-items: center; margin: 10px 0 0; }
+.last-entry { margin: 13px 0 0; min-height: 1.5em; color: var(--subtle); font-size: .92rem; }
+.route-hint p { margin: 6px 0 0; color: var(--gold-light); }
+.dart-slots { list-style: none; padding: 0; display: flex; gap: 6px; margin: 13px 0; }
+.dart-slots li { display: grid; gap: 2px; padding: 8px 12px; background: var(--raised); border-radius: 7px; min-width: 72px; }
+.dart-slots small { color: var(--subtle); font-size: .78rem; }
+.dart-slots strong { color: var(--gold-light); }
+.score-picker { max-width: 450px; margin-top: 12px; }
+.number-grid, .multiplier-row { display: grid; gap: 6px; margin-top: 6px; }
+.number-grid { grid-template-columns: repeat(5, minmax(0, 1fr)); }
+.multiplier-row { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+.score-picker .button { min-height: 44px; padding: 4px; touch-action: manipulation; }
+.score-picker [aria-pressed="true"] { color: var(--button-ink); background: var(--gold); border-color: var(--gold); }
+.score-picker [aria-pressed="true"]:hover:enabled { background: var(--gold-light); }
+#data-notice { margin-top: 16px; padding: 10px 14px; color: var(--gold-light); background: var(--gold-wash); border-radius: 8px; }
 .session-tools { display: flex; align-items: center; gap: 14px; flex-wrap: wrap; margin-top: 14px; }
 .quiet { border: 0; padding: 4px 0; background: transparent; color: var(--subtle); font-weight: 650; text-decoration: underline; text-underline-offset: 2px; }
 .target-grid { display: flex; flex-wrap: wrap; gap: 8px; margin: 13px 0; }
@@ -126,6 +148,19 @@ button.target-chip[aria-pressed="true"] { color: var(--button-ink); background: 
 .history-list li:first-child { border-top: 0; }
 .history-list span { display: block; color: var(--subtle); font-size: .9rem; margin-top: 3px; }
 .history-list .item-score { color: var(--ink); font-weight: 760; text-align: right; }
+.history-filters { display: flex; flex-wrap: wrap; gap: 8px 16px; margin: 15px 0; }
+.history-filters label { display: grid; gap: 4px; color: var(--subtle); font-size: .9rem; }
+.history-filters select { min-height: 43px; border: 1px solid var(--control-line); border-radius: 7px; padding: 4px 9px; color: var(--ink); background: var(--dark); }
+.history-statistics details { margin-bottom: 10px; }
+.history-statistics summary, .route-hint summary { cursor: pointer; }
+.score-details { margin: 14px 0; }
+.score-details p { margin: 4px 0 8px; }
+.score-details strong { color: var(--gold-light); }
+.stats-table { overflow-x: auto; margin: 10px 0; }
+.stats-table table { width: 100%; border-collapse: collapse; text-align: left; font-variant-numeric: tabular-nums; }
+.stats-table th, .stats-table td { padding: 7px 6px; border-bottom: 1px solid var(--line); }
+.stats-table thead { color: var(--subtle); font-size: .9rem; }
+.stats-table td { white-space: nowrap; }
 .field-stack { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
 .field-stack .button { flex: none; }
 .skip-link { position: fixed; z-index: 3; left: 12px; top: 9px; transform: translateY(-200%); padding: 10px; background: var(--surface); }
@@ -169,4 +204,5 @@ button.target-chip[aria-pressed="true"] { color: var(--button-ink); background: 
   .brand strong, nav a { font-size: .76rem; }
   .brand-mark { width: 29px; height: 29px; }
   #overview { grid-template-columns: 1fr; gap: 3px; }
+  .checkout-buttons { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 }

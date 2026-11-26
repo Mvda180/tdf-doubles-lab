@@ -6,9 +6,9 @@
   <meta name="theme-color" content="#141513">
   <meta name="description" content="Train doubles en checkouts met The Darts Family. Speel drie trainingen op je eigen niveau en volg je vooruitgang.">
   <title>TDF Doubles Lab · The Darts Family</title>
-  <link rel="stylesheet" href="./styles.css?v=tdf-goud">
-  <script defer src="./training.js"></script>
-  <script defer src="./app.js"></script>
+  <link rel="stylesheet" href="./styles.css?v=score-invoer">
+  <script defer src="./training.js?v=score-invoer"></script>
+  <script defer src="./app.js?v=score-invoer"></script>
 </head>
 <body>
   <a class="skip-link" href="#main">Naar inhoud</a>
@@ -25,6 +25,7 @@
     </div>
   </header>
   <main class="site-width" id="main" tabindex="-1">
+    <p id="data-notice" role="status" hidden></p>
     <section id="home" aria-label="Trainingen">
       <div class="hero">
         <canvas id="board" width="880" height="880" aria-hidden="true"></canvas>
